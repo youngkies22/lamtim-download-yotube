@@ -1,0 +1,42 @@
+# Dependency yang di-install ulang di dalam image
+/vendor
+/node_modules
+
+# Hasil build & runtime yang di-generate ulang
+/public/build
+/public/hot
+/public/storage
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/logs/*
+/storage/app/tmp
+/bootstrap/cache/*.php
+
+# Secret & database lokal (dibuat ulang di container)
+.env
+.env.backup
+.env.production
+/database/database.sqlite
+
+# Git & tooling
+.git
+.gitignore
+.gitattributes
+.github
+.idea
+.vscode
+.zed
+.phpunit.result.cache
+/.phpunit.cache
+
+# Docker itu sendiri
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Lain-lain
+*.log
+.DS_Store
+Thumbs.db
+README*.md

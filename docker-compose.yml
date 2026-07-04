@@ -1,0 +1,27 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: lamtim-download-yotube
+    container_name: lamtim-download-yotube
+    restart: unless-stopped
+    ports:
+      # akses aplikasi di http://localhost:8000
+      - "8000:80"
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_URL: http://localhost:8000
+      # yt-dlp butuh path absolut untuk --ffmpeg-location (nama bare "ffmpeg"
+      # tidak di-resolve lewat PATH oleh yt-dlp sendiri, walau valid untuk shell).
+      FFMPEG_BIN: /usr/bin/ffmpeg
+    volumes:
+      # Simpan database SQLite & log agar tidak hilang saat container di-recreate.
+      # Hapus blok ini kalau ingin benar-benar stateless.
+      - app_storage:/var/www/html/storage
+      - app_database:/var/www/html/database
+
+volumes:
+  app_storage:
+  app_database:
