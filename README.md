@@ -1,58 +1,155 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Download Video (YouTube, TikTok, Instagram, Facebook)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplikasi web sederhana berbasis Laravel untuk download video dari YouTube, TikTok, Instagram, dan Facebook. Tinggal tempel URL, pilih kualitas, langsung download — mirip situs downloader seperti vidssave.com, tapi self-hosted.
 
-## About Laravel
+Mesin download-nya memakai [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) (mendukung ratusan situs secara otomatis) dan `ffmpeg` (untuk menggabungkan stream video+audio serta ekstrak audio ke MP3).
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+> **Catatan penggunaan**: gunakan hanya untuk konten yang memang boleh diunduh (video publik/milik sendiri). Hormati Ketentuan Layanan tiap platform dan hak cipta pemilik konten. Video privat/dibatasi di Instagram/Facebook bisa gagal diunduh tanpa login — ini keterbatasan platform, bukan bug aplikasi.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Fitur
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- Tempel URL → cek video (judul, thumbnail, durasi) → pilih kualitas (1080p/720p/480p/360p/Kualitas Terbaik) atau audio saja (MP3) → download.
+- Mendeteksi platform otomatis (YouTube, TikTok, Instagram, Facebook) lewat `yt-dlp`, tanpa logic terpisah per situs.
+- Validasi URL hanya untuk domain yang didukung (mencegah aplikasi disalahgunakan sebagai proxy download umum).
+- Rate limiting bawaan (`throttle`) di endpoint API.
+- File hasil download otomatis dibersihkan setelah dikirim ke browser, plus job terjadwal untuk membersihkan sisa file yang tertinggal.
 
-## Learning Laravel
+## Prasyarat
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+Pastikan sudah terpasang di komputer:
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+| Kebutuhan | Versi minimal | Cek dengan |
+|---|---|---|
+| PHP | 8.3+ | `php -v` |
+| Composer | terbaru | `composer -V` |
+| Node.js & npm | terbaru | `node -v` && `npm -v` |
+| Python | 3.9+ (untuk menjalankan `yt-dlp`) | `python --version` |
+| ffmpeg | terbaru | `ffmpeg -version` |
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+`yt-dlp` sendiri dipasang lewat `pip` di langkah instalasi di bawah, tidak perlu diinstal manual dulu.
 
-## Agentic Development
+## Instalasi
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+1. **Clone & masuk folder project**
+
+   ```bash
+   git clone <url-repo-ini> download-video
+   cd download-video
+   ```
+
+2. **Install dependency PHP & JS**
+
+   ```bash
+   composer install
+   npm install
+   npm run build
+   ```
+
+3. **Siapkan file environment**
+
+   ```bash
+   cp .env.example .env
+   php artisan key:generate
+   ```
+
+4. **Pasang `yt-dlp`**
+
+   ```bash
+   pip install -U yt-dlp
+   ```
+
+   Cek lokasi binary-nya (dibutuhkan untuk langkah 6):
+
+   ```bash
+   # Windows
+   where yt-dlp
+   # macOS/Linux
+   which yt-dlp
+   ```
+
+5. **Pasang `ffmpeg`** (kalau belum ada)
+
+   ```bash
+   # Windows (winget)
+   winget install --id Gyan.FFmpeg -e
+
+   # macOS (Homebrew)
+   brew install ffmpeg
+
+   # Ubuntu/Debian
+   sudo apt install ffmpeg
+   ```
+
+   Cek lokasi binary-nya dengan `where ffmpeg` (Windows) atau `which ffmpeg` (macOS/Linux).
+
+6. **Isi path binary di `.env`**
+
+   Buka `.env`, isi tiga variabel berikut sesuai hasil langkah 4 & 5:
+
+   ```env
+   YTDLP_BIN=yt-dlp
+   YTDLP_PYTHONPATH=
+   FFMPEG_BIN=ffmpeg
+   ```
+
+   - Kalau `yt-dlp`/`ffmpeg` sudah ada di PATH sistem, nilai default (`yt-dlp`, `ffmpeg`) sudah cukup.
+   - Kalau tidak (misalnya muncul error "yt-dlp is not recognized" atau proses gagal terus), isi `YTDLP_BIN`/`FFMPEG_BIN` dengan **path lengkap** ke file `.exe`/binary-nya (pakai `/` sebagai pemisah folder meskipun di Windows, contoh: `C:/Users/nama-anda/AppData/Roaming/Python/Python312/Scripts/yt-dlp.exe`).
+   - Kalau setelah itu masih muncul error `ModuleNotFoundError: No module named 'yt_dlp'`, isi `YTDLP_PYTHONPATH` dengan output dari:
+
+     ```bash
+     python -c "import site; print(site.getusersitepackages())"
+     ```
+
+7. **Siapkan database lokal** (dipakai untuk session/cache bawaan Laravel, bukan untuk fitur download)
+
+   ```bash
+   touch database/database.sqlite
+   php artisan migrate
+   ```
+
+8. **Jalankan aplikasinya** — pilih salah satu:
+
+   - **Laravel Herd** (direkomendasikan kalau sudah pakai Herd): buka Herd, klik "Park" pada folder project ini, lalu akses lewat domain `.test` yang muncul (misal `https://download-video.test`).
+   - **`php artisan serve`**:
+
+     ```bash
+     php artisan serve
+     ```
+
+     lalu buka `http://127.0.0.1:8000`.
+
+## Cara Pakai
+
+1. Buka halaman utama aplikasi.
+2. Tempel link video YouTube/TikTok/Instagram/Facebook, klik **Cek Video**.
+3. Setelah muncul thumbnail, judul, dan daftar kualitas, klik kualitas yang diinginkan (termasuk **Audio (MP3)** kalau cuma butuh suaranya).
+4. Browser otomatis mulai mengunduh file-nya.
+
+## Konfigurasi (`.env`)
+
+| Variabel | Fungsi |
+|---|---|
+| `YTDLP_BIN` | Path/nama binary `yt-dlp`. Default `yt-dlp` (asumsi ada di PATH). |
+| `YTDLP_PYTHONPATH` | Isi hanya kalau muncul `ModuleNotFoundError: No module named 'yt_dlp'` — path ke folder `site-packages` Python. |
+| `FFMPEG_BIN` | Path/nama binary `ffmpeg`. Default `ffmpeg` (asumsi ada di PATH). |
+
+## Pembersihan File Sementara
+
+File hasil download disimpan sementara di `storage/app/tmp/<uuid>/` lalu dihapus otomatis setelah terkirim ke browser. Kalau ada proses yang gagal di tengah jalan dan meninggalkan sisa file, jalankan job pembersihan terjadwal dengan scheduler Laravel:
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+php artisan schedule:work
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+(atau daftarkan `php artisan schedule:run` sebagai cron/Task Scheduler tiap menit kalau di-deploy ke server). Job `app:cleanup-tmp-downloads` akan menghapus folder temp yang lebih tua dari 1 jam.
 
-## Contributing
+## Troubleshooting
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+- **"Video tidak ditemukan atau tidak bisa diakses"** — cek dulu `yt-dlp <url>` langsung lewat terminal. Kalau juga gagal di situ, kemungkinan video privat, dihapus, atau `yt-dlp` perlu di-update (`pip install -U yt-dlp`).
+- **"File hasil download tidak ditemukan"** — biasanya karena `ffmpeg` tidak ditemukan (cek `FFMPEG_BIN`) atau proses gagal karena kombinasi format tertentu; coba kualitas lain.
+- **Error terkait Python/`ModuleNotFoundError`** — isi `YTDLP_PYTHONPATH` seperti dijelaskan di langkah instalasi nomor 6.
+- **Video Instagram/Facebook privat gagal diunduh** — keterbatasan platform (butuh login), bukan bug aplikasi.
 
-## Code of Conduct
+## Lisensi
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Proyek ini dibangun di atas [Laravel](https://laravel.com), open-source dengan lisensi MIT.
