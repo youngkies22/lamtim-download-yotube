@@ -12,7 +12,7 @@ services:
     environment:
       APP_ENV: production
       APP_DEBUG: "false"
-      APP_URL: http://localhost:8000
+      APP_URL: http://127.0.0.1:8000
       # yt-dlp butuh path absolut untuk --ffmpeg-location (nama bare "ffmpeg"
       # tidak di-resolve lewat PATH oleh yt-dlp sendiri, walau valid untuk shell).
       FFMPEG_BIN: /usr/bin/ffmpeg
