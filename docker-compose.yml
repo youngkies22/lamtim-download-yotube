@@ -12,7 +12,13 @@ services:
     environment:
       APP_ENV: production
       APP_DEBUG: "false"
-      APP_URL: http://127.0.0.1:8000
+      # Ganti ke domain asli kamu. Kalau domain ini diakses via HTTPS (mis. lewat
+      # reverse-proxy aaPanel), isi dengan skema https:// -- AppServiceProvider
+      # akan otomatis memaksa semua URL/aset dibuat sebagai https:// juga,
+      # supaya tidak kena Mixed Content walau proxy tidak kirim header
+      # X-Forwarded-Proto. Kalau cuma diakses langsung tanpa domain/SSL,
+      # biarkan http://<IP-VPS>:8000.
+      APP_URL: https://unduh.budutwj.com
       # yt-dlp butuh path absolut untuk --ffmpeg-location (nama bare "ffmpeg"
       # tidak di-resolve lewat PATH oleh yt-dlp sendiri, walau valid untuk shell).
       FFMPEG_BIN: /usr/bin/ffmpeg
